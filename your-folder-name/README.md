@@ -10,9 +10,6 @@ iModel_Wgde_1.2_P_5_vin_0.025_dpore_500_dpored_0_Wsep_*_Ls_2000_datan_ANN_valid_
 
 train_ann_R2_RMSE_saveCSV: python code for DNN training
 
-
-
-
 preparedData_BoxCox_scaled.mat : MATLAB Data file with DNN training data
 trainedANN_seed7084_boxcox_3.keras : Trained AWE CFD model surrogate in python
 
