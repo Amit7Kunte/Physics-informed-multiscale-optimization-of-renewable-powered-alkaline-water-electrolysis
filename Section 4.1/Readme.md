@@ -1,0 +1,29 @@
+This folder contains data and source code for generation of data in section 4.1
+
+
+Sobol_sensitivity_heatmap_capexbreakup : python script for generation of the capex heatmap Fig. 4e ('Sobol_ST_raw_rev_T' result file)
+
+Sobol_sensitivity_heatmap_clubbed : python script for generation of the energy consumption and stack level output variables heatmap Fig. 4d ('sobol_ST_colored_T' result file)
+
+SEC_plot : python script for generation of data ('currdens_vs_equipmentSEC' and 'currdens_vs_globalmetrics') in Fig. 4a and 4b, as well as sankey plot 4c
+
+SEC_plot_dataprep.mat : MATLAB code for SEC data extraction from  'iModel_Wgde_0.7_P_1_vin_0.025_dpore_500_dpored_0_Wsep_0.485_Ls_2000_datan'.
+
+capex_data_prep.mat : MATLAB code for CAPEX data extraction and calculation of TIC from  'iModel_Wgde_0.7_P_1_vin_0.025_dpore_500_dpored_0_Wsep_0.485_Ls_2000_datan'.
+
+Eqpt_cost_pie_data : excel result file with CAPEX of eqpt break-up data.
+
+TIC_pie : MATLAB code for preparation of TIC break-up data
+TIC_pie_data :  excel result file with TIC break-up data.
+
+
+preparedData_SEC.mat : MATLAB  Data file with SEC data extracted from 'iModel_Wgde_0.7_P_1_vin_0.025_dpore_500_dpored_0_Wsep_0.485_Ls_2000_datan' for input into 'SEC_plot'.
+
+trainedANN_capex_breakup.keras : Trained AWE capex model surrogate in python for capex heatmap generation
+
+preparedData_capex_rated75_heatmap : Training data for capex surrogate
+
+preparedData_BoxCox_scaled.mat : MATLAB Data file with DNN training data
+trainedANN_seed7084_boxcox_3.keras : Trained AWE CFD model surrogate in python
+
+Data_section4.1.xls : consolidated results used in plots in main text Fig.4
