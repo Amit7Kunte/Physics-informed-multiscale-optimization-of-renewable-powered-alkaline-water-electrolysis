@@ -1,4 +1,4 @@
-This folder contains data and source code for generation of data in section 3.0
+This folder contains data and source code for generation of data in section 3.0 of the manuscript
 
 Folder 'DNN training' contains code to generate training data and surrogate model training.
 
