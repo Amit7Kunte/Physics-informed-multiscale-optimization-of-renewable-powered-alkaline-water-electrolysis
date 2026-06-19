@@ -1,5 +1,5 @@
 import os
-#os.chdir(r"D:\Comsol_Tut\EquationBasedModelling\HTO_paper_models\latest_model_tcd\Neom_report_models\Publication Models\modified_model\Optimization_study\saved data\Joule_submission_docs\Data for section 3.3")
+#os.chdir(r"C:\comsol\5_stack_model\saved_data")
 #print(os.getcwd())  # Optionally verify
 
 
@@ -51,25 +51,24 @@ alpha_delPlyect =0.2
 heater_frac_ratedpower = 0.05 # fraction of rated power used to design the heater rating
 #----- stack degradation and plant model constants-----
 degrade_stack = 10 # max degradation over stack lifetime
-bj=0.0005 
+bj=0.0005
 #Sensitivity parameters
 #m_degrate = 0.002# degradation rate ################################################################################################################################################################################### 
 rated_load = 75 # rated current density ###############################################################################################################################################################################
-genratio = 3.0 # ratio of hybrid generation rated cc to AWE system rated cc ###############################################################################################################################################
+genratio = 1.5 # ratio of hybrid generation rated cc to AWE system rated cc ###############################################################################################################################################
 rel_RES = 0.5
-cdeta_sweep_vals = [0.078,0.08,0.1,0.11,0.13,0.15,0.18,0.2,0.22,0.25,0.28,0.3,0.32,0.35]
+cdeta_sweep_vals = [0.065, 0.08,0.1,0.15,0.2,0.25,0.28,0.3,0.35,0.4]
 m_degrate_sweep = [0.001]
-nj_sweep        = [0.5]
+nj_sweep        = [1.0]
 #genratio_sweep  = [1.2, 1.5/fname, 1.8]
-Tmax_constraint_value = 120
+Tmax_constraint_value = 121
 #nj = 0.2
 sw = 1
 alphaa = sw*2*5*10**-4
-t_sys = 40; # plant operation life in years
+t_sys = 30; # plant operation life in years
 eta_pow = 0.98 # power electronics efficiency
 T_thresh = 0 # threshold Tmax above which degradation starts
 base_degrate = 0.125*8.760 # base stack degradation rate, % per year
-
 r = .08 # disc rate
 CRF = (r * (1 + r) ** t_sys) / ((1 + r) ** t_sys - 1)
 gc =1000000 #scale-up factor, one Million times scale-up is used here
@@ -113,12 +112,12 @@ T_glsepHXout = 298
 T_deoxo_out=273.15+150 # deoxidizer outlet temperature
 
 # --- GA settings (best for pop=300) ---
-pop_size = 1200
+pop_size = 600
 crossover_eta = 10
 mutation_eta = 30
 n_generations = 150
 
-n_workers = 24 # Use all available cores, as per your workstation #####################################################################################################################################################
+n_workers = 96 # Use all available cores, as per your workstation #####################################################################################################################################################
 def log_callback(algorithm, *args, **kwargs):
     # getattr + default keeps it robust across versions
     n_eval = getattr(algorithm, "n_eval", None)
@@ -171,20 +170,20 @@ w_KOH_gl_out_IDX    = 5
 Q_gl_out_IDX        = 6
 Q_angl_out_IDX      = 7
 glsep_O2_IDX        = 8
-H2_mixedToHTO_IDX   = 9
-Q_cond_h2cooler_IDX = 10
-Q_cond_ads_IDX      = 11
-Q_cond_deoxo_IDX    = 12
-T_gl_out_IDX        = 13
-T_angl_out_IDX      = 14
-cell_delP_IDX       = 15
-ancell_delP_IDX     = 16
+#H2_mixedToHTO_IDX   = 9
+Q_cond_h2cooler_IDX = 9
+Q_cond_ads_IDX      = 10
+Q_cond_deoxo_IDX    = 11
+T_gl_out_IDX        = 12
+T_angl_out_IDX      = 13
+cell_delP_IDX       = 14
+ancell_delP_IDX     = 15
 
 J_kWh = 2.7778E-7
 MH2 = 0.002
 HHV_H2 = 285.8 * 1000 * J_kWh / MH2
-xl = np.array([0.7, 1, 0.0075, 200, 0.1, minIn_SEC[-1]+600])
-xu = np.array([2.0, 12, 0.03, 800, 0.16, maxIn_SEC[-1]])
+xl = np.array([0.4, 1, 0.0075, 200, 0.075, minIn_SEC[-1]+600])
+xu = np.array([2.0, 15, 0.03, 800, 0.3, maxIn_SEC[-1]])
 
 
 ################################### CALCULATE THE HYBRID PV-WIND POWER GENERATION PROFILE ##################################
@@ -249,7 +248,7 @@ class AWEMultiObjVarConst(ElementwiseProblem):
                 Q_gl_out_IDX,      # 6
                 Q_angl_out_IDX,    # 7
                 glsep_O2_IDX,      # 8
-                H2_mixedToHTO_IDX, # 9
+              #  H2_mixedToHTO_IDX, # 9
                 Q_cond_h2cooler_IDX,#10
                 Q_cond_ads_IDX,    #11
                 Q_cond_deoxo_IDX,  #12
@@ -275,7 +274,7 @@ class AWEMultiObjVarConst(ElementwiseProblem):
         self.Q_gl_out_IDX = Q_gl_out_IDX
         self.Q_angl_out_IDX = Q_angl_out_IDX
         self.glsep_O2_IDX= glsep_O2_IDX
-        self.H2_mixedToHTO_IDX = H2_mixedToHTO_IDX
+        #self.H2_mixedToHTO_IDX = H2_mixedToHTO_IDX
         self.Q_cond_h2cooler_IDX = Q_cond_h2cooler_IDX
         self.Q_cond_ads_IDX = Q_cond_ads_IDX
         self.Q_cond_deoxo_IDX = Q_cond_deoxo_IDX
@@ -357,7 +356,7 @@ class AWEMultiObjVarConst(ElementwiseProblem):
           return_sorted=False
       )
 
-      H2_mixedToHTO_s  = y_grid_unscaled[:, self.H2_mixedToHTO_IDX]
+      #H2_mixedToHTO_s  = y_grid_unscaled[:, self.H2_mixedToHTO_IDX]
       Q_cond_h2cooler_s  = y_grid_unscaled[:, self.Q_cond_h2cooler_IDX]*gc
       Q_cond_ads_s       = y_grid_unscaled[:, self.Q_cond_ads_IDX]*gc
       Q_cond_deoxo_s     = y_grid_unscaled[:, self.Q_cond_deoxo_IDX]*gc
@@ -398,7 +397,7 @@ class AWEMultiObjVarConst(ElementwiseProblem):
       interp_w_KOH_gl_out   = interp1d(cd_grid, w_KOH_gl_out_s,   kind='linear', fill_value="extrapolate")
       interp_Q_gl_out       = interp1d(cd_grid, Q_gl_out_s,       kind='linear', fill_value="extrapolate")
       interp_Q_angl_out     = interp1d(cd_grid, Q_angl_out_s,     kind='linear', fill_value="extrapolate")
-      interp_H2_mixedToHTO  = interp1d(cd_grid, H2_mixedToHTO_s,  kind='linear', fill_value="extrapolate")
+      #interp_H2_mixedToHTO  = interp1d(cd_grid, H2_mixedToHTO_s,  kind='linear', fill_value="extrapolate")
       interp_Q_cond_h2cooler = interp1d(cd_grid, Q_cond_h2cooler_s, kind='linear', fill_value="extrapolate")
       interp_Q_cond_ads     = interp1d(cd_grid, Q_cond_ads_s,     kind='linear', fill_value="extrapolate")
       interp_Q_cond_deoxo   = interp1d(cd_grid, Q_cond_deoxo_s,   kind='linear', fill_value="extrapolate")
@@ -428,7 +427,7 @@ class AWEMultiObjVarConst(ElementwiseProblem):
       w_KOH_gl_out   = interp_w_KOH_gl_out(cd)
       Q_gl_out      = interp_Q_gl_out(cd)
       Q_angl_out    = interp_Q_angl_out(cd)
-      H2_mixedToHTO = interp_H2_mixedToHTO(cd)
+     # H2_mixedToHTO = interp_H2_mixedToHTO(cd)
       Q_cond_h2cooler = interp_Q_cond_h2cooler(cd)
       Q_cond_ads    = interp_Q_cond_ads(cd)
       Q_cond_deoxo  = interp_Q_cond_deoxo(cd)
@@ -456,24 +455,36 @@ class AWEMultiObjVarConst(ElementwiseProblem):
           # ==============================
     
       if len(idx) == 0:
-        g2 = 1e6
+         g2 = 1e6
+
+      #   out["F"] = np.array([1e6, 1e6]) # obj are energy costs in $/kg, and total capex in $/kg, 3% operational O&M
+      #   out["G"] = np.array([1e6, 1e6, 1e6])
+      #   print("F shape:", np.asarray(out["F"]).shape, "G shape:", np.asarray(out["G"]).shape)
+      #   return 
+         cd_eta75 = 3000
+         cd_hto = 1000
       else:
-        i = idx[-1]
-        cd1, cd2 = cd_grid[i], cd_grid[i + 1]
-        eta1, eta2 = eta_stack[i], eta_stack[i + 1]
-        cd_eta75 = cd1 + (rated_load - eta1) * (cd2 - cd1) / (eta2 - eta1)
+         i = idx[-1]
+         cd1, cd2 = cd_grid[i], cd_grid[i + 1]
+         eta1, eta2 = eta_stack[i], eta_stack[i + 1]
+         cd_eta75 = cd1 + (rated_load - eta1) * (cd2 - cd1) / (eta2 - eta1)
         
-        hto_idxs = np.where(HTO_s > 2)[0]
-        if len(hto_idxs) == 0:
-            g2 = 1e6
-        else:
+         hto_idxs = np.where(HTO_s > 2)[0]
+         if len(hto_idxs) == 0:
+      #   out["F"] = np.array([1e6, 1e6]) # obj are energy costs in $/kg, and total capex in $/kg, 3% operational O&M
+      #   out["G"] = np.array([1e6, 1e6, 1e6])
+      #   print("F shape:", np.asarray(out["F"]).shape, "G shape:", np.asarray(out["G"]).shape)
+      #   return 
+            g2= 1e6  
+         else:
+
             cd_hto = cd_grid[hto_idxs[-1]]
             g2 = cd_hto / cd_eta75 - self.cd_eta75_base_ratio
 
       SEC_stack_at_eta75 = interp_SEC_stack(cd_eta75)
       vap_h2_pdt_eta75 = interp_vap_h2_pdt(cd_eta75)
       #SEC_sys_at_peak = interp_SEC_stack(cd_eta75*1.1)
-      vap_h2_pdt_peak = interp_vap_h2_pdt(cd_eta75*1.1)
+      #vap_h2_pdt_peak = interp_vap_h2_pdt(cd_eta75*1.1)
       Q_gl_out_at_eta75 = interp_Q_gl_out(cd_eta75)
       Q_angl_out_at_eta75 = interp_Q_angl_out(cd_eta75)
       T_angl_out_at_eta75 = interp_T_angl_out(cd_eta75)
@@ -529,7 +540,7 @@ class AWEMultiObjVarConst(ElementwiseProblem):
 
 
      # STACK
-      Ni_foam = 0.5/10**-6; # $0.5/cm^3,https://shop.nanografi.com/battery-equipment/nickel-foam-for-battery-cathode-substrate-size-1000-mm-x-300-mm-x-1-6-mm/
+      Ni_foam = 0.25/10**-6; # $0.5/cm^3,https://shop.nanografi.com/battery-equipment/nickel-foam-for-battery-cathode-substrate-size-1000-mm-x-300-mm-x-1-6-mm/
       zf_sep = gc*150*0.05*0.008*conv_rate*Nc; # 150 Euro/m^2 from AGFA Data 'Present and future cost of alkaline and PEM electrolyser stacks'
       steel = gc*(0.05*0.008*0.003*2+0.05*0.008*0.001*(Nc-1))*rho_steel*4.5;    # 0.9 $ /kg for carbon steel, 4.5$/kg for SS316L. SS used for longer stack life and in advanced stack designs operating at higher cd.
       Ni =  gc*2*(0.05*0.008*x[0]*0.001*(Nc))*Ni_foam; # 15 $/kg Ni price as on 4/10/2025, based on volume of electrode
@@ -1275,7 +1286,7 @@ class AWEMultiObjVarConst(ElementwiseProblem):
       CP_des_cool_min = 10 ** (4.1884- 0.2503 * np.log10(2.0)+ 0.1974 * (np.log10(2.0)) ** 2)
 
       # Bounds check
-      if (area_h2cool_at_eta75   / N_h2cool) > 3000 or area_des_cool_at_eta75 > 1000 or area_deoxo_cool_at_eta75 > 1000:
+      if (area_h2cool_at_eta75   / N_h2cool) > 4000 or area_des_cool_at_eta75 > 1500 or area_deoxo_cool_at_eta75 > 1500:
           raise ValueError("HX area above correlation upper bound")
 
       # Bare-module costs
@@ -1829,7 +1840,7 @@ class AWEMultiObjVarConst(ElementwiseProblem):
       repl_inter_yrs = dur_stack/t_oper
       PV_repl=0.0
       for k in range(1,Nrep+1):
-         PV_repl+= Tot_stack_cost/(1+r)**(k*repl_inter_yrs)
+         PV_repl+= Tot_stack_cost*0.8/(1+r)**(k*repl_inter_yrs)  # 80% orig stack cost for repl
 
       Tot_stack_cost_life = Tot_stack_cost+PV_repl # total stack costs over plant lifetime   
       ######################################### Total BM_capex calculation... ###########################################
@@ -1860,7 +1871,7 @@ class AWEMultiObjVarConst(ElementwiseProblem):
       wind_opex =44
       
 
-      n_renew = 25
+      n_renew = 30
       CRF_renew = (r*(1+r)**n_renew)/((1+r)**n_renew-1)
                              # hours per step
        #% Cumulative energy produced per annum kWh/(kW installed)/yr, factor of 0.001 as the data from SAM is in watts / per unit kW insatlled capacity
@@ -1891,8 +1902,8 @@ class AWEMultiObjVarConst(ElementwiseProblem):
       cd = x[-1]
 
       g3 = cd_hto - cd
-      g4 = cd/cd_eta75 -1.1 # max. curr that can be drawn is 10% above the rated current
-      out["F"] = np.array([SEC_avg_sys*elec_cost, TIC*CRF*1.03/(vap_h2_pdt* MH2* t_oper * 3600)]) # obj are energy costs in $/kg, and total capex in $/kg, 3% operational O&M
+      g4 = cd/cd_eta75 -1.1 # max. curr that can be drawn is 10% above the rated current, in order to match the process eqpt sizing which was based on the rated current density (rated system power).
+      out["F"] = np.array([SEC_avg_sys*elec_cost, TIC*CRF*1.03/(vap_h2_pdt* MH2* t_oper * 3600) ]) # obj are energy costs in $/kg, and total capex in $/kg, 3% operational O&M
       out["G"] = np.array([g2, g3, g4])
       out["aux"] = {"W_sys75": W_sys75}
 
@@ -1938,7 +1949,7 @@ if __name__ == "__main__":
                         Q_gl_out_IDX,
                         Q_angl_out_IDX,
                         glsep_O2_IDX,
-                        H2_mixedToHTO_IDX,
+                       # H2_mixedToHTO_IDX,
                         Q_cond_h2cooler_IDX,
                         Q_cond_ads_IDX,
                         Q_cond_deoxo_IDX,
@@ -2034,6 +2045,7 @@ if __name__ == "__main__":
                 pareto_hours_idle  = np.zeros(len(pareto_front_indices))
                 pareto_therm_tau = np.zeros(len(pareto_front_indices))
                 pareto_p_min_standby = np.zeros(len(pareto_front_indices))
+                pareto_p_min = np.zeros(len(pareto_front_indices))
                 pareto_frac_standby_ener = np.zeros(len(pareto_front_indices))   
                 n_pf = len(pareto_front_indices)
                 pareto_T_hist = np.zeros((n_pf, 8760))
@@ -2090,7 +2102,7 @@ if __name__ == "__main__":
                         )
 
 
-                        H2_mixedToHTO_s  = y_grid_unscaled[:, H2_mixedToHTO_IDX]
+                        #H2_mixedToHTO_s  = y_grid_unscaled[:, H2_mixedToHTO_IDX]
                         Q_cond_h2cooler_s  = y_grid_unscaled[:, Q_cond_h2cooler_IDX]*gc
                         Q_cond_ads_s       = y_grid_unscaled[:, Q_cond_ads_IDX]*gc
                         Q_cond_deoxo_s     = y_grid_unscaled[:, Q_cond_deoxo_IDX]*gc
@@ -2129,7 +2141,7 @@ if __name__ == "__main__":
                         interp_w_KOH_gl_out   = interp1d(cd_grid, w_KOH_gl_out_s,   kind='linear', fill_value="extrapolate")
                         interp_Q_gl_out       = interp1d(cd_grid, Q_gl_out_s,       kind='linear', fill_value="extrapolate")
                         interp_Q_angl_out     = interp1d(cd_grid, Q_angl_out_s,     kind='linear', fill_value="extrapolate")
-                        interp_H2_mixedToHTO  = interp1d(cd_grid, H2_mixedToHTO_s,  kind='linear', fill_value="extrapolate")
+                        #interp_H2_mixedToHTO  = interp1d(cd_grid, H2_mixedToHTO_s,  kind='linear', fill_value="extrapolate")
                         interp_Q_cond_h2cooler = interp1d(cd_grid, Q_cond_h2cooler_s, kind='linear', fill_value="extrapolate")
                         interp_Q_cond_ads     = interp1d(cd_grid, Q_cond_ads_s,     kind='linear', fill_value="extrapolate")
                         interp_Q_cond_deoxo   = interp1d(cd_grid, Q_cond_deoxo_s,   kind='linear', fill_value="extrapolate")
@@ -2176,7 +2188,7 @@ if __name__ == "__main__":
                         w_KOH_gl_out   = interp_w_KOH_gl_out(cd)
                         Q_gl_out      = interp_Q_gl_out(cd)
                         Q_angl_out    = interp_Q_angl_out(cd)
-                        H2_mixedToHTO = interp_H2_mixedToHTO(cd)
+                       # H2_mixedToHTO = interp_H2_mixedToHTO(cd)
                         Q_cond_h2cooler = interp_Q_cond_h2cooler(cd)
                         Q_cond_ads    = interp_Q_cond_ads(cd)
                         Q_cond_deoxo  = interp_Q_cond_deoxo(cd)
@@ -2201,7 +2213,7 @@ if __name__ == "__main__":
                         SEC_stack_at_eta75 = interp_SEC_stack(cd_eta75)
                         vap_h2_pdt_eta75 = interp_vap_h2_pdt(cd_eta75)
                         #SEC_sys_at_peak = interp_SEC_stack(cd_eta75*1.1)
-                        vap_h2_pdt_peak = interp_vap_h2_pdt(cd_eta75*1.1)
+                        #vap_h2_pdt_peak = interp_vap_h2_pdt(cd_eta75*1.1)
                         Q_gl_out_at_eta75 = interp_Q_gl_out(cd_eta75)
                         Q_angl_out_at_eta75 = interp_Q_angl_out(cd_eta75)
                         T_angl_out_at_eta75 = interp_T_angl_out(cd_eta75)
@@ -2228,7 +2240,7 @@ if __name__ == "__main__":
                     ###########################################################################     AUXILLIARY CAPEX CALCULATION       ###########################################
 
                         # STACK
-                        Ni_foam = 0.5/10**-6; # $0.5/cm^3,https://shop.nanografi.com/battery-equipment/nickel-foam-for-battery-cathode-substrate-size-1000-mm-x-300-mm-x-1-6-mm/
+                        Ni_foam = 0.25/10**-6; # $0.5/cm^3 reduced by half asuming bulk purchase,https://shop.nanografi.com/battery-equipment/nickel-foam-for-battery-cathode-substrate-size-1000-mm-x-300-mm-x-1-6-mm/
                         zf_sep = gc*150*0.05*0.008*conv_rate*Nc; # 150 Euro/m^2 from AGFA Data 'Present and future cost of alkaline and PEM electrolyser stacks'
                         steel = gc*(0.05*0.008*0.003*2+0.05*0.008*0.001*(Nc-1))*rho_steel*4.5;    # 0.9 $ /kg for carbon steel, 4.5$/kg for SS316L. SS used for longer stack life and in advanced stack designs operating at higher cd.
                         Ni =  gc*2*(0.05*0.008*x[0]*0.001*(Nc))*Ni_foam; # 15 $/kg Ni price as on 4/10/2025, based on volume of electrode
@@ -3232,6 +3244,7 @@ if __name__ == "__main__":
                         SEC_stack_minload = interp_SEC_stack(min_load)
 
                         P_min = 1000*(W_pump_minload + SEC_stack_minload* vap_h2_pdt_minload * MH2 * 3600 + (heater_ads_minload + heater_deoxo_minload + heater_regen + Q_lyeheater_minload)/eta_heater  + W_refrcomp_minload + W_refrfan_minload + W_comp_minload + W_fan_minload)/eta_pow # in Watts
+                        pareto_p_min[i] = P_min
                         #in Watts, system power at min load
                         #vap_h2_pdt_standby_load = interp_vap_h2_pdt(minIn_SEC[-1])
                         
@@ -3499,7 +3512,7 @@ if __name__ == "__main__":
                         repl_inter_yrs = dur_stack/t_oper
                         PV_repl=0.0
                         for k in range(1,Nrep+1):
-                          PV_repl+= Tot_stack_cost/(1+r)**(k*repl_inter_yrs)
+                          PV_repl+= Tot_stack_cost*0.8/(1+r)**(k*repl_inter_yrs)
 
                         Tot_stack_cost_life = Tot_stack_cost+PV_repl # total stack costs over plant lifetime   
                         ######################################### Total BM_capex calculation... ###########################################
@@ -3530,7 +3543,7 @@ if __name__ == "__main__":
                         wind_opex =44
                         
 
-                        n_renew = 25
+                        n_renew = 30
                         CRF_renew = (r*(1+r)**n_renew)/((1+r)**n_renew-1)
                                               # hours per step
                         #% Cumulative energy produced per annum kWh/(kW installed)/yr, factor of 0.001 as the data from SAM is in watts / per unit kW insatlled capacity
@@ -3578,6 +3591,7 @@ if __name__ == "__main__":
                             'BM_refrig' : BMM_refrig,
                             'BM_h2compression' : BMM_h2compression, 
                             'pareto_p_min_standby' : pareto_p_min_standby,
+                            'pareto_p_min' : pareto_p_min,
                             'pareto_frac_standby_ener' : pareto_frac_standby_ener,     
                             'pareto_T_hist' : pareto_T_hist,
                             'pareto_SEC_avg_stack' : pareto_SEC_avg_stack
