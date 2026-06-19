@@ -1,57 +1,9 @@
 clc; clear;
 format long g
- baseDir  = pwd;
- baseDir  = strtrim(strrep(baseDir, sprintf('\n'), ''));   % remove any newlines
- allFiles = dir(fullfile(baseDir, 'combined_cdeta*_m*_nj0.50_PV*_gr*.mat'));
- if isempty(allFiles)
-    error('No matching combined_cdeta files found.');
- end
- nAll = numel(allFiles);
-PV_all = nan(nAll,1);
-gr_all = nan(nAll,1);
-m_all  = nan(nAll,1);
-
-for i = 1:nAll
-    fname = allFiles(i).name;
-    tPV = regexp(fname, '_PV([0-9\.]+)_', 'tokens', 'once');
-    tgr = regexp(fname, '_gr([0-9\.]+)\.mat$', 'tokens', 'once');
-    tm  = regexp(fname, '_m([0-9\.]+)_nj', 'tokens', 'once');
-    if ~isempty(tPV), PV_all(i) = str2double(tPV{1}); end
-    if ~isempty(tgr), gr_all(i) = str2double(tgr{1}); end
-    if ~isempty(tm),  m_all(i)  = str2double(tm{1});  end
-end
-
-comboMat = [PV_all, gr_all, m_all];
-[uniqueCombos, ~, comboID] = unique(comboMat, 'rows');
-
-for c = 1:size(uniqueCombos,1)
-
-    PV = uniqueCombos(c,1);
-    genratio = uniqueCombos(c,2);
-    m = uniqueCombos(c,3);
-
-    idxGroup = comboID == c;
-    fileList = allFiles(idxGroup);
-
-    fprintf('\nProcessing group %d/%d: PV=%.1f, gr=%.1f, m=%.4f\n', ...
-        c, size(uniqueCombos,1), PV, genratio, m);
-    fprintf('Number of cdeta files in this group: %d\n', numel(fileList));
-
-    % Sort this group's files by cdeta
-    partload_vals = zeros(numel(fileList),1);
-    for k = 1:numel(fileList)
-        tokens = regexp(fileList(k).name, '_cdeta([0-9\.]+)_', 'tokens', 'once');
-        if isempty(tokens)
-            error('Could not parse cdeta from filename: %s', fileList(k).name);
-        end
-        partload_vals(k) = str2double(tokens{1}) * 100;
-    end
-    [partload_vals, sortIdx] = sort(partload_vals);
-    fileList = fileList(sortIdx);
 %close all;
 %% Economic Parameters
 % 1. Capital recovery factor
-t_sys = 40;
+t_sys = 30;
 n_years = t_sys;    % plant lifetime
 r = 0.08;      % discount rate (% per year)
 CRF = (r*(1+r)^n_years)/((1+r)^n_years-1); % as before
@@ -70,28 +22,29 @@ MH2 = 0.002;               % Molecular weight of H2 (kg/mol)
 HHV_H2 = 285.8*1000*J_kWh/MH2;            % Higher Heating Value (kWh/kg)
 Vm = 22.414;                 % Molar volume at STP (L/mol)
 % Gather all files and sort by cdeta
-%fileList = dir('combined_cdeta0.*_m0.0010_nj0.50_PV75.0_gr2.0.mat');
+fileList = dir('combined_cdeta0.*_m0.0010_nj1.00_PV75.0_gr3.0.mat');
+%fileList = dir('ga_sens_cdeta0.078_m0.0010_nj0.5_PV_rated75.0_gr4.0_lcoh_BESScapex220.0_alpha0.001_FUH1.0_job11086306_SECsys_batt.mat');
 pvgen  = readmatrix('pvgen_profile.csv');      % 8760x1
 windgen = readmatrix('windgen_profile.csv')/1000;   % 8760x1, power in W per 1500 W of rated turbine
 HHV_H2 = 285.8*1000*2.7778E-7/0.002;
 
-%partload_vals = zeros(length(fileList),1);
-% for i = 1:length(fileList)
-%   %  tokens = regexp(fileList(i).name,'_cdeta([0-9\.]+)_', 'tokens');
-%      t2 = regexp(fileList(i).name,'_gr([0-9\.])','tokens','once');
-%        genratio_vals(i) = str2double(t2{1});
-%    % partload_vals(i) = str2double(tokens{1})*100;
-%      t3 = regexp(fileList(i).name,'_PV([0-9\.]+)_','tokens','once');
-%     PV_vals(i) = str2double(t3{1});
-%      t4 = regexp(fileList(i).name,'_m([0-9\.]+)_','tokens','once');
-%      m_vals(i) = str2double(t4{1});
-% end
-% %[partload_vals, sortIdx] = sort(partload_vals);
-% genratio  = mean(genratio_vals);
-% PV = mean(PV_vals);
-% m = mean(m_vals);
-% param_grid = partload_vals;
-
+%fileList = dir('ga_sens_cdeta0.073_m0.0010_nj0.5_PV_rated75.0_gr1.5_lcoh_capex.mat');
+%excludeIdx = contains(fileList.name, 'cdeta0.08_') | contains(fileList.name, 'cdeta0.15_')| contains(fileList.name, 'cdeta0.25_');
+Tmax_vals = zeros(length(fileList),1);
+for i = 1:length(fileList)
+    tokens = regexp(fileList(i).name,'_cdeta([0-9\.]+)_', 'tokens');
+     t2 = regexp(fileList(i).name,'_gr([0-9\.]+)\.','tokens','once');
+     t3 = regexp(fileList(i).name,'_PV([0-9\.]+)_','tokens','once');
+     t4 = regexp(fileList(i).name,'_m([0-9\.]+)_','tokens','once');
+       genratio_vals(i) = str2double(t2{1});
+       PV_vals(i) = str2double(t3{1});
+       m_vals(i) = str2double(t4{1});
+    Tmax_vals(i) = str2double(tokens{1})*100;
+end
+[gerw, sortIdx] = sort(genratio_vals);
+genratio  = mean(gerw);
+PV =mean(PV_vals);
+mvals = mean(m_vals);
 % gr_vals = zeros(length(fileList),1);
 % 
 % for i = 1:length(fileList)
@@ -131,56 +84,8 @@ MAX_obj = zeros(nFiles, nObj);
 LINMAP_params = zeros(nFiles, nParams);
 MIN_params = zeros(nFiles, nParams);
 MAX_params = zeros(nFiles, nParams);
-LCOH_obj = nan(nFiles,1);
-    LCOH_mean = nan(nFiles,1);
-    LCOH_median = nan(nFiles,1);
-    LCOH_params = nan(nFiles,6);
 
-    optimal_design = struct();
-    optimal_design.CAPEX_dolperkg = nan(nFiles,1);
-    optimal_design.Energy_dolperkg = nan(nFiles,1);
-    optimal_design.W_sys75 = nan(nFiles,1);
-    optimal_design.LCOE = nan(nFiles,1);
-    optimal_design.curtail = nan(nFiles,1);
-    optimal_design.vap_h2_pdt = nan(nFiles,1);
-    optimal_design.maxT = nan(nFiles,1);
-    optimal_design.LF = nan(nFiles,1);
-    optimal_design.LCOE_RES = nan(nFiles,1);
-    optimal_design.SEC_sys = nan(nFiles,1);
-    optimal_design.frac_stdby_ener = nan(nFiles,1);
-    optimal_design.frac_heating_limited = nan(nFiles,1);
-    optimal_design.TIC_sys = nan(nFiles,1);
-    optimal_design.dur_stack = nan(nFiles,1);
-    optimal_design.degrate_eff = nan(nFiles,1);
-    optimal_design.Nrep = nan(nFiles,1);
-    optimal_design.TICperkW = nan(nFiles,1);
-    optimal_design.hours_idle = nan(nFiles,1);
-    optimal_design.hours_prod = nan(nFiles,1);
-    optimal_design.hours_stdby = nan(nFiles,1);
-    optimal_design.p_min_stdby = nan(nFiles,1);
-    optimal_design.therm_tau = nan(nFiles,1);
-    optimal_design.SEC_sta = nan(nFiles,1);
-    optimal_design.cd_eta75 = nan(nFiles,1);
-    optimal_design.t_oper = nan(nFiles,1);
-    optimal_design.BM_pow = nan(nFiles,1);
-    optimal_design.BM_pumps = nan(nFiles,1);
-    optimal_design.BM_heaters = nan(nFiles,1);
-    optimal_design.BM_lyecool = nan(nFiles,1);
-    optimal_design.BM_h2purif = nan(nFiles,1);
-    optimal_design.BM_gasliqsep = nan(nFiles,1);
-    optimal_design.BM_refrig = nan(nFiles,1);
-    optimal_design.BM_h2compression = nan(nFiles,1);
-    optimal_design.n_starts = nan(nFiles,1);
-    optimal_design.cd = nan(nFiles,1);
-    optimal_design.repl_cost = nan(nFiles,1);
-    optimal_design.Tot_stack_life_cost = nan(nFiles,1);
-    optimal_design.Tot_stack_cost = nan(nFiles,1);
-    optimal_design.frac_E_lost_strtup = nan(nFiles,1);
-       
-    optimal_design.X = nan(nFiles,6);
-    optimal_design.t_hist = nan(nFiles,8760);   % or correct width if fixed
-   
-for k = 1:nFiles
+for k = 1:length(fileList)
     data = load(fileList(k).name);
 %%%%%%%%%%%%%%%%%%%%
     F = data.pareto_F;   
@@ -216,6 +121,7 @@ for k = 1:nFiles
            hours_prod    = data.pareto_hours_prod;
           hours_stdby     = data.pareto_hours_standby;
          p_min_stdby      = data.pareto_p_min_standby;
+         P_min = data.pareto_p_min;
          therm_tau      = data.pareto_therm_tau;
             T_hist  = data.pareto_T_hist;
                     params = data.pareto_X;              % [N x 6]
@@ -257,7 +163,6 @@ for k = 1:nFiles
     LCOH_best = LCOH_sorted(1:N);                       % Take best N
     idxs_best = idxs_sorted(1:N);
     % For robust plot/trend, use:
-   
     LCOH_mean(k) = mean(LCOH_best);                        % Average
     LCOH_median(k) = median(LCOH_best);                    % Median (even less sensitive to outlier)
 
@@ -270,7 +175,11 @@ for k = 1:nFiles
 %%    load_factor_obj(k) = mean(data.pareto_load_factor);
 
     optimal_design.CAPEX_dolperkg(k) =  CAPEX_dolperkg(idx_min);
-    
+    %optimal_design.OPEX_annual(k) = OPEX_annual (idx_min);
+    %optimal_design.CAPEX_dolperkg(k) =  (CAPEX_annual(idx_min))./H2_annual(idx_min);
+    %optimal_design.CAPEX_kW(k) =  CAPEX_kW(idx_min);
+    %optimal_design.H2_annual(k) =  H2_annual(idx_min);
+    %optimal_design.Energy_annual(k) =  Energy_annual(idx_min).*H2_annual(idx_min);
     optimal_design.Energy_dolperkg(k) = Energy_dolperkg(idx_min);
     optimal_design.W_sys75(k) = W_sys75(idx_min)/1000;
     optimal_design.LCOE(k) = LCOE(idx_min);
@@ -292,6 +201,7 @@ for k = 1:nFiles
     optimal_design.hours_prod(k) = hours_prod(idx_min);
     optimal_design.hours_stdby(k) = hours_stdby(idx_min);
     optimal_design.p_min_stdby(k) = p_min_stdby(idx_min);
+    optimal_design.P_min(k) = P_min(idx_min);
     optimal_design.therm_tau(k) = therm_tau(idx_min);
     optimal_design.SEC_sta(k) = SEC_sta(idx_min);
     optimal_design.cd_eta75(k) = cd_eta75(idx_min);
@@ -314,7 +224,7 @@ for k = 1:nFiles
     
     hybrid =  pvgen_scaled + windgen_scaled; % inkW
 
-    P_min = (partload_vals(k)/100*optimal_design.W_sys75(k)*1000); % min. power reqd for production in kW
+    %P_min = (Tmax_vals(k)/100*optimal_design.W_sys75(k)*1000); % min. power reqd for production in kW
 
 
 
@@ -325,9 +235,9 @@ for k = 1:nFiles
 
     Thist  = optimal_design.t_hist(k,:);         % temperature profile
 
-    Pmin_j = P_min;                % min production power in kW
+    Pmin_j =  optimal_design.P_min(k);                % min production power in kW
 
-    prod_power_ok = Pavail >= Pmin_j;
+    prod_power_ok = Pavail >= Pmin_j/1000;
 
     prod_power_ok_hrs = sum(prod_power_ok); % seems to be a const number.
 
@@ -466,7 +376,7 @@ for k = 1:nFiles
     % 3) Quick check pie in MATLAB (optional)
 %     figure;
 %     pie(pieVals, pieLabelsPct);
-%     title(sprintf('CAPEX breakdown at %.2f percent (Total = %.2f USD)', partload_vals(k),totalCapex));
+%     title(sprintf('CAPEX breakdown at %.2f percent (Total = %.2f USD)', Tmax_vals(k),totalCapex));
 % 
 % 
 % % 4) Export values + labels to CSV for Origin
@@ -478,22 +388,36 @@ end
 metric_names = {'vap_h2_pdt','TIC_sys','repl_cost','Load Factor', 'SEC_sys', 'LCOE'};
 input_names = {'n_starts','maxT','elec width', 'pres','inlet vel', 'pore size','sep width','curr dens'};
 LCOH_names ={'LCOH','Energy per kg','Capex per kg'};
-LCOH_bkp = [LCOH_obj optimal_design.Energy_dolperkg  optimal_design.CAPEX_dolperkg];
+LCOH_bkp = [LCOH_obj';optimal_design.Energy_dolperkg ; optimal_design.CAPEX_dolperkg];
 [LCOH_min, idx_col_min] = min(LCOH_bkp(1,:));
  % 
- T = array2table(LCOH_bkp, 'VariableNames', LCOH_names);  % rows = loads
- T.min_load = partload_vals(:);                         % add as last column
+ T = array2table(LCOH_bkp', 'VariableNames', LCOH_names);  % rows = loads
+ T.min_load = Tmax_vals(:);                         % add as last column
  T = movevars(T,'min_load','Before',1);                % make it first column
 
- fname    = sprintf('LCOH_vs_load_m%.3f_PV%.1f_gr%.1f.xlsx', m, PV, genratio);
-fullpath = fullfile(baseDir, fname);
+ %writetable(T,'DD_LCOH_vs_load_m0.001_PV75.0_gr2.0.xlsx','Sheet','data');
+ fname = sprintf('DD_LCOH_vs_load_m%.3f_PV%.1f_gr%.1f.xlsx', mvals,PV, genratio);
+ writetable(T, fname, 'Sheet', 'data');
 
-writetable(T, fullpath, 'Sheet', 'data');
+metric_bkp = [optimal_design.vap_h2_pdt/100;optimal_design.TIC_sys/10^6;optimal_design.repl_cost;optimal_design.LF; optimal_design.SEC_sys;optimal_design.LCOE*100 ]; %;optimal_design.curtail];
+% M = metric_bkp;
+% %Mmin = min(metric_bkp ,[],2);
+% %Mmax = max(metric_bkp ,[],2);
+% M_opt = metric_bkp(:, idx_col_min);
+% kg = 100;
+% R     = M ./ M_opt;
+% D = (R - 1) * kg;
 
+% plot(hybrid*0.003)
+% hold on
+% plot(optimal_design.t_hist(11,:))
 
+% %input_names = {'maxT', 'elec width', 'pres','inlet vel', 'pore size','sep width', 'curr dens'};
+%  T = array2table(D', 'VariableNames', metric_names);  % rows = loads
+%   T.min_load = Tmax_vals(:);                         % add as last column
+%   T = movevars(T,'min_load','Before',1);                % make it first column
+%   writetable(T,'DD_metricbkp_m0.001_PV75.0_gr2.0.xlsx','Sheet','data');
 
-metric_bkp = [optimal_design.vap_h2_pdt/100 optimal_design.TIC_sys/10^6 optimal_design.repl_cost optimal_design.LF  optimal_design.SEC_sys optimal_design.LCOE*100 ]; %;optimal_design.curtail];
-M = metric_bkp;
 nMetrics = size(metric_bkp,1);
 
 M = metric_bkp;
@@ -504,31 +428,181 @@ kg = 100;
 R     = M ./ M_opt;
 D = (R - 1) * kg;
 
- T = array2table(M, 'VariableNames', metric_names);  % rows = loads
- T.min_load = partload_vals(:);                         % add as last column
+ T = array2table(M', 'VariableNames', metric_names);  % rows = loads
+ T.min_load = Tmax_vals(:);                         % add as last column
  T = movevars(T,'min_load','Before',1);                % make it first column
+fname = sprintf('D_metrics_vs_load_m%.3f_PV%.1f_gr%.1f.xlsx', mvals,PV, genratio);
+ writetable(T, fname, 'Sheet', 'data');
+ writetable(T,'D_metrics_vs_load.xlsx','Sheet','data');
+% 
+ input_param_bkp = [optimal_design.n_starts'/100 optimal_design.maxT' ,optimal_design.X(:,1), optimal_design.X(:,2),optimal_design.X(:,3)*100,optimal_design.X(:,4)/100,optimal_design.X(:,5)*5,optimal_design.X(:,6)*0.001]; %;optimal_design.curtail];
 
+ 
 
-
-
-
-fname    = sprintf('D_metrics_vs_load_m%.3f_PV%.1f_gr%.1f.xlsx', m, PV, genratio);
-fullpath = fullfile(baseDir, fname);
-
-writetable(T, fullpath, 'Sheet', 'data');
-
- input_param_bkp = [optimal_design.n_starts/100 optimal_design.maxT optimal_design.X(:,1) optimal_design.X(:,2) optimal_design.X(:,3)*100 optimal_design.X(:,4)/100 optimal_design.X(:,5)*5 optimal_design.X(:,6)*0.001]; %;optimal_design.curtail];
-
-
-
-
+% clear M
+M = input_param_bkp;
+input_names = {'n_starts','maxT', 'elec width', 'pres','inlet vel', 'pore size','sep width', 'curr dens'};
   T = array2table(input_param_bkp, 'VariableNames', input_names);  % rows = loads
-  T.min_load = partload_vals(:);                         % add as last column
+  T.min_load = Tmax_vals(:);                         % add as last column
   T = movevars(T,'min_load','Before',1);                % make it first column
-fname    = sprintf(' inputparam_vs_load_m%.3f_PV%.1f_gr%.1f.xlsx', m, PV, genratio);
-fullpath = fullfile(baseDir, fname);
+  fname = sprintf('DD_inputparam_vs_load_m%.3f_PV%.1f_gr%.1f.xlsx', mvals,PV, genratio);
+  writetable(T, fname, 'Sheet', 'data');
 
-writetable(T, fullpath, 'Sheet', 'data');
 
+
+% figure;
+% bar(Tmax_vals, D.', 'grouped');    % bars grouped by load
+% yline(0,'k-','LineWidth',1);   % reference = optimum
+% 
+% xlabel('Minimum load limit (%)');
+% 
+% ylabel('\Delta metric relative to optimal load (%)');
+% 
+% legend(metric_names, ...
+%        'Location','northoutside', ...
+%        'Orientation','horizontal');
+% grid on;
+% figure;
+% for m = 1:nMetrics
+%     subplot(nMetrics,1,m);
+%     bar(Tmax_vals, D(m,:));
+%     yline(0,'k-');
+%     ylabel(metric_names{m});
+%     if m==1, title('\Delta metric vs optimal load (%)'); end
+%     if m==nMetrics, xlabel('Minimum load limit (%)'); end
+% end
+
+% Mmax(Mmax==0) = 1;           % avoid division by zero
+% M_norm =metric_bkp ./ Mmax;          % each row now has max = 1
+% M_opt = M(:, idx_opt);      % value at optimal partial load
+% R     = M ./ M_opt;         % ratio vs optimal (1 at 20% for all metrics)
+% 
+% 
+
+figure('Color','w');
+
+%% Subplot 1: LCOH vs Tmax
+subplot(1,4,1); hold on; grid off;
+plot(Tmax_vals, LCOH_obj(:), '-o', 'LineWidth',2,'MarkerSize',9,'Color',[0.1 0.5 0.1],'MarkerFaceColor',[0.1 0.5 0.1]);
+plot(Tmax_vals, LCOH_mean(:), '--s', 'LineWidth',2,'MarkerSize',8,'Color',[0.4 0.6 0.1],'MarkerFaceColor',[0.4 0.6 0.1]);
+%plot(Tmax_vals, LCOH_median(:), ':^', 'LineWidth',2,'MarkerSize',8,'Color',[0.85 0.33 0.1],'MarkerFaceColor',[0.85 0.33 0.1]);
+xlabel('minimum load/rated load (%)','FontWeight','bold','FontSize',16);
+ylabel('LCOH (kg H_2)','FontWeight','bold','FontSize',16);
+%legend({'LCOH-min','LCOH-mean (best 10)','LCOH-median (best 10)'},'FontSize',11, 'Location','best','Box','off');
+title('LCOH vs. minimum load/rated load (%)');
+ax = gca; 
+ax.Box = 'on';         % draws the frame around the axes
+ax.LineWidth = 1.5;    % set the frame thickness (adjust as needed)
+
+hold off;
+
+%% Subplot 2: Objective function values (distinct colors)
+subplot(1,4,2); hold on; grid off;
+
+plot(Tmax_vals, optimal_design.CAPEX_dolperkg,    '-s', 'LineWidth',2,'MarkerSize',8,'Color',[0 0.447 0.741],'MarkerFaceColor',[0 0.447 0.741]);
+
+plot(Tmax_vals, 1*optimal_design.Energy_dolperkg,    '-x', 'LineWidth',2,'MarkerSize',8,'Color',[0 0.747 0.341],'MarkerFaceColor',[0 0.747 0.341]);
+
+plot(Tmax_vals, 0.001*optimal_design.vap_h2_pdt,    '-o', 'LineWidth',2,'MarkerSize',8,'Color',[0 0.707 0.141],'MarkerFaceColor',[0 0.707 0.141]);
+plot(Tmax_vals, 1*optimal_design.LCOE,    '-d', 'LineWidth',2,'MarkerSize',8,'Color',[0 0.047 0.341],'MarkerFaceColor',[0 0.047 0.341]);
+plot(Tmax_vals, 0.1*optimal_design.W_sys75,    '-^', 'LineWidth',2,'MarkerSize',8,'Color',[0 0.189 0.841],'MarkerFaceColor',[0 0.189 0.841]);
+plot(Tmax_vals, 0.1*optimal_design.LF ,    '-p', 'LineWidth',2,'MarkerSize',8,'Color',[0 0.947 0.791],'MarkerFaceColor',[0 0.947 0.791]);
+plot(Tmax_vals, 1*optimal_design.curtail,    '-g', 'LineWidth',2,'MarkerSize',8,'Color',[0 0.381 0.901],'MarkerFaceColor',[0 0.381 0.901]);
+plot(Tmax_vals, 1*optimal_design.maxT,    '-r', 'LineWidth',2,'MarkerSize',8,'Color',[.80 0.547 0.782],'MarkerFaceColor',[.80 0.547 0.782]);
+
+xlabel('minimum load/rated load (%)','FontWeight','bold','FontSize',16);
+ylabel('Obj. function value','FontWeight','bold','FontSize',16);
+legend({ 'CAPEX dolperkg. (LCOH)',  ...
+        'Energy dolperkg (LCOH)', ...
+        '0.001 \times vap_h2_pdt (LCOH)', ...
+        'LCOE (LCOH)', ...
+        ' 0.1 \times W_sys75 (LCOH)', ...
+        ' 0.1 \times LF (LCOH)', ...
+        ' curtail (LCOH)', ...
+        ' maxT (LCOH)'}, ...
+        'FontSize',11, 'Location','best','Box','off');
+title('Obj. functions vs. minimum load/rated load (%)');
+ax = gca; 
+ax.Box = 'on';         % draws the frame around the axes
+ax.LineWidth = 1.5;    % set the frame thickness (adjust as needed)
+
+hold off;
+subplot(1,4,3); hold on; grid off;
+
+plot(Tmax_vals, optimal_design.LCOE_RES,    '-s', 'LineWidth',2,'MarkerSize',8,'Color',[0 0.447 0.741],'MarkerFaceColor',[0 0.447 0.741]);
+
+plot(Tmax_vals, 10^-6*optimal_design.TIC_sys,    '-x', 'LineWidth',2,'MarkerSize',8,'Color',[0 0.747 0.341],'MarkerFaceColor',[0 0.747 0.341]);
+
+plot(Tmax_vals, 1*optimal_design.SEC_sys,    '-o', 'LineWidth',2,'MarkerSize',8,'Color',[0 0.707 0.141],'MarkerFaceColor',[0 0.707 0.141]);
+plot(Tmax_vals, 1*optimal_design.repl_cost,    '-d', 'LineWidth',2,'MarkerSize',8,'Color',[0 0.047 0.341],'MarkerFaceColor',[0 0.047 0.341]);
+plot(Tmax_vals, 0.001*optimal_design.TICperkW,    '-^', 'LineWidth',2,'MarkerSize',8,'Color',[0 0.189 0.841],'MarkerFaceColor',[0 0.189 0.841]);
+plot(Tmax_vals, 0.1*optimal_design.n_starts,    '-r', 'LineWidth',2,'MarkerSize',8,'Color',[.80 0.547 0.782],'MarkerFaceColor',[.80 0.547 0.782]);
+%plot(Tmax_vals, 0.01*optimal_design.standby_time,    '--', 'LineWidth',2,'MarkerSize',8,'Color',[.80 0.547 0.782],'MarkerFaceColor',[.40 0.547 0.782]);
+plot(Tmax_vals, 1*optimal_design.degrate_eff,    '-*', 'LineWidth',2,'MarkerSize',8,'Color',[.80 0.547 0.782],'MarkerFaceColor',[.80 0.547 0.782]);
+% plot(Tmax_vals, 0.1*optimal_design.LF ,    '-p', 'LineWidth',2,'MarkerSize',8,'Color',[0 0.947 0.791],'MarkerFaceColor',[0 0.947 0.791]);
+% plot(Tmax_vals, 1*optimal_design.curtail,    '-g', 'LineWidth',2,'MarkerSize',8,'Color',[0 0.381 0.901],'MarkerFaceColor',[0 0.381 0.901]);
+% plot(Tmax_vals, 1*optimal_design.maxT,    '-r', 'LineWidth',2,'MarkerSize',8,'Color',[.80 0.547 0.782],'MarkerFaceColor',[.80 0.547 0.782]);
+
+xlabel('minimum load/rated load (%)','FontWeight','bold','FontSize',16);
+ylabel('Obj. function value','FontWeight','bold','FontSize',16);
+legend({%'H2 annual_{sys} (LCOH)',   ...
+        'LCOE_RES',  ...
+        'CAPEX (M$) (LCOH)', ...
+        'SEC_sys (LCOH)', ...
+        'repl_cost(%) (LCOH)', ...
+        'TIC per MW (LCOH)', ...
+        'n_starts (LCOH)', ...
+        'degrate_eff (LCOH)'}, ...
+        'FontSize',11, 'Location','best','Box','off');
+title('Obj. functions vs. minimum load/rated load (%)');
+ax = gca; 
+ax.Box = 'on';         % draws the frame around the axes
+ax.LineWidth = 1.5;    % set the frame thickness (adjust as needed)
+
+hold off;
+
+
+
+%% Subplot 3: Parameter values (distinct colors)
+subplot(1,4,4); hold on; grid off;
+plot(Tmax_vals, params_meanbest(:,1),   '-s', 'LineWidth',2,'MarkerSize',8,'Color',[0 0.447 0.741],'MarkerFaceColor',[0 0.447 0.741]);
+plot(Tmax_vals, params_meanbest(:,2),   '-o', 'LineWidth',2,'MarkerSize',8,'Color',[0.85 0.325 0.098],'MarkerFaceColor',[0.85 0.325 0.098]);
+plot(Tmax_vals, 100*params_meanbest(:,3),'-^', 'LineWidth',2,'MarkerSize',8,'Color',[0.929 0.694 0.125],'MarkerFaceColor',[0.929 0.694 0.125]);
+plot(Tmax_vals, 0.005*params_meanbest(:,4),'-d','LineWidth',2,'MarkerSize',8,'Color',[0.494 0.184 0.556],'MarkerFaceColor',[0.494 0.184 0.556]);
+plot(Tmax_vals, params_meanbest(:,5),   '-x', 'LineWidth',2,'MarkerSize',10,'Color',[0.466 0.674 0.188],'MarkerFaceColor',[0.466 0.674 0.188]);
+plot(Tmax_vals, 0.0001*params_meanbest(:,6),'-p','LineWidth',2,'MarkerSize',10,'Color',[0.301 0.745 0.933],'MarkerFaceColor',[0.301 0.745 0.933]);
+dx = 0.2;              % small x-offset so text does not overlap marker
+dy = 0;                % y-offset if needed
+for k = 1:numel(Tmax_vals)
+    txt = sprintf('%.2f', optimal_design.SEC_sta(k));   % 2 digits after decimal
+
+    text(Tmax_vals(k)+dx, 0.0001*params_meanbest(k,6)+dy, txt, ...
+         'FontSize', 10, 'Color', 'k');
 end
+
+
+
+for k = 1:numel(Tmax_vals)
+    text(Tmax_vals(k)+dx, params_meanbest(k,2)+dy, ...
+         num2str(N_comp(k)), ...
+         'FontSize', 10, 'Color', 'k');
+end
+xlabel('minimum load/rated load (%)','FontWeight','bold','FontSize',16);
+ylabel('Parameter value','FontWeight','bold','FontSize',16);
+legend({'Electrode width (mm) (LCOH)', ...
+        'Pressure (bar) (LCOH)', ...
+        '100 \times Inlet velocity (m/s)(LCOH)', ...
+        '0.005 \times Pore (\mum)(LCOH)', ...
+        'Separator width (mm)(LCOH)', ...
+        '0.0001 \times Current density(LCOH)'}, ...
+        'FontSize',13, 'Location','northwest','Box','off');
+%title(sprintf('m\\_degrate = %.4f, genratio = %.2f,nj = %.2f, PV_rated = %.2f', mean(m_degrate),mean(gr_vals) , mean(n_j), mean(PV_rated)));
+TileFigures;          % or tilefigs
+%title(sprintf('m\\_degrate = %.4f, genratio = %.2f', m_degrate, genratio));
+ax = gca; 
+ax.Box = 'on';         % draws the frame around the axes
+    ax.LineWidth =1.5;    % set the frame thickness (adjust as needed)
+
+hold off;
+
 

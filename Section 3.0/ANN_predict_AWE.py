@@ -9,11 +9,11 @@ import os
 import re
 import statsmodels.api as sm
 
-#os.chdir(r"D:\Comsol_Tut\EquationBasedModelling\HTO_paper_models\latest_model_tcd\Neom_report_models\Publication Models\modified_model\Optimization_study\saved data")
+os.chdir(r"C:\comsol\5_stack_model\saved_data")
 # --- User config ---
 model_file = 'trainedANN_seed7084_boxcox_3.keras'
 scaling_file = 'preparedData_BoxCox_scaled.mat'
-matfiles = glob.glob('iModel_Wgde_1.2_P_5_vin_0.025_dpore_500_dpored_0_Wsep_*_Ls_2000_datan_ANN_valid_inputs.mat')
+matfiles = glob.glob('iModel_Wgde_0.5_P_9.6_vin_0.0098_dpore_500_dpored_0_Wsep_0.09_Ls_2000_datan.mat')
 lam = -0.5
 
 def inv_boxcox(y, lam, c=0.0):
@@ -25,8 +25,13 @@ def inv_boxcox(y, lam, c=0.0):
     else:
         return np.power(lam * y + 1.0, 1.0 / lam) - c
 
+'''output_vars = ['SEC_sys', 'maxT', 'SEC_stack', 'vap_h2_pdt', 'H_T_O', 
+    'eta_curr_sys', 'eta_curr_stack', 'eta_shunt', 'eta_therm', 'eta_volt', 
+    'SEC_ads', 'SEC_chiller_h2cooler', 'SEC_chiller_lyecooler', 'SEC_comp', 
+    'SEC_deoxo', 'SEC_pumps', 'SEC_lyeheaters', 'T_reg', 'H2_mixedToHTO', 'Q_cond_ads', 'Q_cond_deoxo','W_refrcomp', 'T_gl_out', 'T_angl_out'
+]'''
 output_vars = ['maxT', 'SEC_stack', 'vap_h2_pdt', 'H_T_O', 
-    'w_KOH_angl_out','w_KOH_gl_out','Q_gl_out','Q_angl_out','glsep_O2' , 'H2_mixedToHTO', 'Q_cond_h2cooler' ,'Q_cond_ads', 'Q_cond_deoxo','T_gl_out','T_angl_out','cell_delP','ancell_delP','eta_volt','eta_curr_stack'
+    'w_KOH_angl_out','w_KOH_gl_out','Q_gl_out','Q_angl_out','glsep_O2' , 'Q_cond_h2cooler' ,'Q_cond_ads', 'Q_cond_deoxo','T_gl_out','T_angl_out','cell_delP','ancell_delP','eta_volt','eta_curr_stack'
 ]
 
 
@@ -35,7 +40,7 @@ output_names = [
     #r'$\mathbf{\left\{\Delta T\right\}_{max}\ \left(^{\circ}\mathrm{C}\right)}$',
     'SEC_stack',
     'vap_h2_pdt', 'H_T_O', 
-    'w_KOH_angl_out','w_KOH_gl_out','Q_gl_out','Q_angl_out','glsep_O2' , 'H2_mixedToHTO', 'Q_cond_h2cooler' ,'Q_cond_ads', 'Q_cond_deoxo','T_gl_out','T_angl_out','cell_delP','ancell_delP','eta_volt','eta_curr_stack'
+    'w_KOH_angl_out','w_KOH_gl_out','Q_gl_out','Q_angl_out','glsep_O2' , 'Q_cond_h2cooler' ,'Q_cond_ads', 'Q_cond_deoxo','T_gl_out','T_angl_out','cell_delP','ancell_delP','eta_volt','eta_curr_stack'
 ]
 
 
@@ -96,12 +101,12 @@ for file_idx, matfile in enumerate(matfiles):
             y_true_list.append(data)
         y_true = np.column_stack(y_true_list)
 
-        cols = [6, 7, 8, 15, 16]
+        cols = [6, 7, 8, 14, 15]
 
         # undo Box–Cox only on selected columns
         y_pred[:, cols] = inv_boxcox(y_pred[:, cols], lam, 0.0)
 
-        cols = [6, 7, 15, 16]
+        cols = [6, 7, 14, 15]
 
         j = currentDensity
         j = j.reshape(-1)           # current density, length N

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 
-#os.chdir(r"D:\Comsol_Tut\EquationBasedModelling\HTO_paper_models\latest_model_tcd\Neom_report_models\Publication Models\modified_model\Optimization_study\saved data\For Joule_pubPlots")
+os.chdir(r"C:\comsol\5_stack_model\saved_data")
 
 # Load scaling parameters and data
 scaling = scipy.io.loadmat('preparedData_capex_rated75_heatmap.mat')
@@ -65,7 +65,7 @@ input_labels = [
 ]
 
 # Generate Saltelli samples
-n_samples = 1024*4
+n_samples = 1024*8
 param_vals = saltelli.sample(problem, n_samples, calc_second_order=False)
 param_vals_scaled = scale_inputs(param_vals)
 y_pred_scaled = model.predict(param_vals_scaled, verbose=0)

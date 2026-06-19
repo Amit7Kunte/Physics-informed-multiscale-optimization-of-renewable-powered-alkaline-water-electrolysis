@@ -81,7 +81,7 @@ T_glsephXout =298.15;
 matFiles = dir(fullfile('iModel_Wgde_0.7_P_1_vin_0.025_dpore_500_dpored_0_Wsep_0.485_Ls_2000_datan.mat'));
 %matFiles = dir(fullfile('iModel_Wgde_*_P_*_vin_*_dpore_*_dpored_0_Wsep_0.*_Ls_2000_datan.mat'));
 fileNames = {matFiles.name};
-excludeIdx = contains(fileNames, 'P_20_') | contains(fileNames, 'P_12_');
+excludeIdx = contains(fileNames, 'P_20_') ;% | contains(fileNames, 'P_12_');;
 fileList = matFiles(~excludeIdx);
 allInputscapex = [];
 allOutputscapex = [];
@@ -110,7 +110,7 @@ for k = 1:length(fileList)
     data = load(fileName);
    
 % Load all variables from the file into the workspace
-    if max(data.currentDensity) < 10000
+    if max(data.currentDensity) < 5000
         warning('Skipping file %s: data only covers up to %.2f A/m^2', fileList(k).name, max(data.currentDensity));
         %skippedFiles{end+1} = fileList(k).name; % Add to skipped file list
         continue; % Skip remaining processing for this file
@@ -187,7 +187,7 @@ J_kWh = 2.7778E-7;
 MH2 = 0.002;
 degrade_stack = 10; % max % degradation over stack lifetime
 t_oper = 3000; % hrs/ yr
-t_sys = 40; %in years
+t_sys = 30; %in years
 m_degrate = 0.001; % per K, degradation rate increase per K delT
 T_thresh = 0;
 %a=0.7;
@@ -200,16 +200,16 @@ Nrep = floor((t_oper*t_sys)./(dur_stack*8760)); % the no. of stack replacements 
 plot(xFine,Nrep)
 hold on
 %m_degrate = 0.001;
-t_oper = 3000;
+%t_oper = 3000;
 maxT_interp =6*ones(length(maxT_interp),1);
-degrate = base_degrate  + m_degrate.*max(maxT_interp' - T_thresh, 1).^(0.5).*exp(0.0005*xFine); % default used is 0.00035
+degrate = base_degrate  + m_degrate.*max(maxT_interp' - T_thresh, 1).^(0.5).*exp(0.00055*xFine); % default used is 0.00035
 dur_stack = degrade_stack./degrate; % in  yrs
 Nrep = floor((t_oper*t_sys)./(dur_stack*8760)); % the no. of stack replacements in plant lifetime. to ccompare SEC_avg_stack for various m, can also be interpreted as the avg SEC consumption of first stack, when Nrep = 1. and so on...
 plot(xFine,Nrep)
 %E_deg = 
 %degrate = 0.125 + m_degrate * (exp(a * max(maxT_interp - T_thresh, 0)) - 1);
 
-dur_rem = (t_oper*t_sys) - Nrep.*dur_stack;
+dur_rem = (t_oper*t_sys) - Nrep.*dur_stack*8760;
 % Approach 2, SEC_stack_interp is the start of life of stack, and
 % thereafter SEC_stack increases with degrate
 SEC_initial = SEC_stack_interp; % kWh/kg H₂ — from your simulation, constant
@@ -218,13 +218,13 @@ SEC_end = SEC_initial * (1 + degrade_stack/100); % 10% higher at EOL
 SEC_avg_per_stack = 0.5 * (SEC_initial + SEC_end); % average over one life
 % Average SEC over partial final stack
 if dur_rem > 0
-    frac_life = dur_rem ./ dur_stack; % fraction of final stack life used
+    frac_life = dur_rem ./ (dur_stack*8760); % fraction of final stack life used
     SEC_end_partial = SEC_initial + frac_life .* (SEC_end - SEC_initial);
     SEC_avg_partial = 0.5 * (SEC_initial + SEC_end_partial);
 else
     SEC_avg_partial = 0;
 end
-SEC_avg_stack = (Nrep .* dur_stack .* SEC_avg_per_stack + dur_rem .* SEC_avg_partial) ./t_total; % avg stack SEC over plant lifetime
+SEC_avg_stack = (Nrep .* dur_stack .* SEC_avg_per_stack + dur_rem/8760 .* SEC_avg_partial) ./(t_total/8760); % avg stack SEC over plant lifetime
 
 
 
@@ -269,7 +269,8 @@ cd_eta75 = x1 + (target_eta - y1) * (x2 - x1) / (y2 - y1);
 %cd_eta75 = 10294;
 fprintf('Current density at 75%% stack efficiency (high-current side): %.2f A/m^2\n', cd_eta75);
 if cd_eta75<1000
-    print('cd_eta75<1000')
+    fprintf('cd_eta75<1000, skipping file')
+    continue
 end
 
 %fprintf('Current density at 70%% stack efficiency: %.2f A/m^2\n', cd_eta75);
@@ -280,7 +281,7 @@ A_cell = 0.008*0.05; % [m^2], set this to your stack's cell area
 I_rated = cd_eta75 * A_cell;
 P_rated = gc*I_rated * Ecell_eta70/1000; % in kW
 %W_sys75= 0.001*interp1(xFine, W_sys_interp*gc, cd_eta75, 'linear', 'extrap');%system power consumption interpolated in kW
-vap_h2_pdt_eta75 = interp1(xFine, vap_h2_pdt_interp*gc, cd_eta75, 'linear', 'extrap') 
+vap_h2_pdt_eta75 = interp1(xFine, vap_h2_pdt_interp*gc, cd_eta75, 'linear', 'extrap') ;
 %W_refrcomp_at_eta70   = 0.001*interp1(xFine, W_refrcomp_interp*gc, cd_eta75, 'linear', 'extrap') ; %in kW
 
 SEC_stack_at_eta75 = interp1(xFine, SEC_stack_interp, cd_eta75, 'linear', 'extrap');
@@ -293,14 +294,14 @@ glsep_O2_at_eta75 = interp1(xFine, glsep_O2_interp*gc, cd_eta75, 'linear', 'extr
 
 
 T_angl_out_at_eta75 = interp1(xFine, T_angl_out_interp, cd_eta75, 'linear', 'extrap') ;
-T_gl_out_at_eta75   =  interp1(xFine, T_gl_out_interp, cd_eta75, 'linear', 'extrap') 
-Q_cond_ads_at_eta75 = interp1(xFine, Q_cond_ads_interp*gc, cd_eta75, 'linear', 'extrap') 
-Q_cond_deoxo_at_eta75 = interp1(xFine, Q_cond_deoxo_interp*gc, cd_eta75, 'linear', 'extrap') 
-Q_cond_h2cool_at_eta75 = interp1(xFine, Q_cond_h2cool_interp*gc, cd_eta75, 'linear', 'extrap') 
+T_gl_out_at_eta75   =  interp1(xFine, T_gl_out_interp, cd_eta75, 'linear', 'extrap') ;
+Q_cond_ads_at_eta75 = interp1(xFine, Q_cond_ads_interp*gc, cd_eta75, 'linear', 'extrap') ;
+Q_cond_deoxo_at_eta75 = interp1(xFine, Q_cond_deoxo_interp*gc, cd_eta75, 'linear', 'extrap') ;
+Q_cond_h2cool_at_eta75 = interp1(xFine, Q_cond_h2cool_interp*gc, cd_eta75, 'linear', 'extrap') ;
 T_reg_eta75= interp1(xFine, T_reg_interp, cd_eta75, 'linear', 'extrap') ;
 w_KOH_angl_out_eta75 = interp1(xFine, w_KOH_angl_out_interp, cd_eta75, 'linear', 'extrap') ;
 w_KOH_gl_out_eta75 = interp1(xFine, w_KOH_gl_out_interp, cd_eta75, 'linear', 'extrap') ;
-Q_gl_out_at_eta75 = interp1(xFine, Q_gl_out_interp, cd_eta75, 'linear', 'extrap')*gc 
+Q_gl_out_at_eta75 = interp1(xFine, Q_gl_out_interp, cd_eta75, 'linear', 'extrap')*gc ;
 Q_angl_out_at_eta75 = interp1(xFine, Q_angl_out_interp, cd_eta75, 'linear', 'extrap')*gc ;
 ancell_inP_at_eta75 = interp1(xFine, ancell_inP_interp, cd_eta75, 'linear', 'extrap');
 ancell_delP_at_eta75 = ancell_inP_at_eta75 - P*10^5;
@@ -338,7 +339,7 @@ Q_lyeheater_at_eta75 = 0.001 * ( ...
     max( (273.15 + 80 - T_angl_out_at_eta75) .* Cp_KOH_anlye_at_eta75 .* Q_angl_out_at_eta75 .* rho_KOH_angl_out_at_eta75, 0 ) );
 
 
-Q_lyecooler_at_eta75 = max((T_gl_out_at_eta75-273.15-80)*Cp_KOH_lye_at_eta75*Q_gl_out_at_eta75*rho_KOH_gl_out_at_eta75,0) + max((T_angl_out_at_eta75-273.15-80)*Cp_KOH_anlye_at_eta75*Q_angl_out_at_eta75*rho_KOH_angl_out_at_eta75,0)
+Q_lyecooler_at_eta75 = max((T_gl_out_at_eta75-273.15-80)*Cp_KOH_lye_at_eta75*Q_gl_out_at_eta75*rho_KOH_gl_out_at_eta75,0) + max((T_angl_out_at_eta75-273.15-80)*Cp_KOH_anlye_at_eta75*Q_angl_out_at_eta75*rho_KOH_angl_out_at_eta75,0);
 
 % cooling water circulation rate at eta75, kg/s
 m_cw_circ_at_eta75 = ( Q_lyecooler_at_eta75 + Q_cond_ads_at_eta75 + ...
@@ -362,7 +363,7 @@ F = 0.9;% correction  factor for HX, typically 0.9 for shell and tube
 T_cws = 293.15; %in K
 T_cwr = T_cws + 5 ;
 % STACK
-Ni_foam = 0.5/10^-6; % $0.05/cm^3,https://shop.nanografi.com/battery-equipment/nickel-foam-for-battery-cathode-substrate-size-1000-mm-x-300-mm-x-1-6-mm/
+Ni_foam = 0.25/10^-6; % $ half of 0.05/cm^3,https://shop.nanografi.com/battery-equipment/nickel-foam-for-battery-cathode-substrate-size-1000-mm-x-300-mm-x-1-6-mm/
 zf_sep = gc*150*0.05*0.008*conv_rate*Nc; % 150 Euro/m^2 from AGFA Data 'Present and future cost of alkaline and PEM electrolyser stacks'
 steel = gc*(0.05*0.008*0.003*2+0.05*0.008*0.001*(Nc-1))*rho_steel*4.5;    % 0.9 $ /kg for carbon steel, 4.5$/kg for SS316L. SS used for longer stack life and in advanced stack designs operating at higher cd. SOURCE:https://www.imarcgroup.com/stainless-steel-316-price-trend
 Ni =  gc*2*(0.05*0.008*Wgde*(Nc))*Ni_foam; % 15 $/kg Ni price as on 4/10/2025, based on volume of electrode
@@ -666,7 +667,7 @@ CP_ads_min = 2 * 10 ^ (3.4974+ 0.4485 * log10(0.3)+ 0.1074 * (log10(0.3))^2);
     BM_0_h2comp   = BM_h2comp   / FBM_comp;
     BM_0_refrcomp = BM_refrcomp / FBM_comp;
       %# Refrigeration compressor min-capacity scaling
-    if (CP_refrcomp == CP_refrcomp_min) || (od_refrcomp*W_refrcomp_at_eta75> 2800)
+    if (CP_refrcomp == CP_refrcomp_min) || (od_refrcomp*W_refrcomp_at_eta75> 3000)
           BM_refrcomp_min = CP_refrcomp_min * FBM_comp;
           BM_refrcomp = sd * BM_refrcomp_min * (od_refrcomp*W_refrcomp_at_eta75 / 5.0) ^ 0.6 * CI;
           BM_0_refrcomp = BM_refrcomp / FBM_comp;
@@ -739,7 +740,7 @@ CP_ads_min = 2 * 10 ^ (3.4974+ 0.4485 * log10(0.3)+ 0.1074 * (log10(0.3))^2);
       BM_refr = sd * FBM_refr * CP_refr* CI;
       BM_0_refr = (0.96+1.21)*CP_refr*CI  ;
 
-      if (CP_refr_min == CP_refr) || (od_aircool*area_refr / N_refr > 20000)
+      if (CP_refr_min == CP_refr) || (od_aircool*area_refr / N_refr > 23000)
           BM_refr_min = CP_refr_min * FBM_refr * CI;
           BM_refr = sd * BM_refr_min * (od_aircool*area_refr / 10.0) ^ nhe;
           BM_0_refr = (0.96+1.21)*CP_refr_min*CI;
@@ -953,7 +954,7 @@ CP_ads_min = 2 * 10 ^ (3.4974+ 0.4485 * log10(0.3)+ 0.1074 * (log10(0.3))^2);
       BM_0_deoxocool = sd * (1.63 + 1.66) * CP_deoxo_cool * CI;
       BM_des_cool = sd * FBM_purif * CP_des_cool * CI;
       BM_0_des_cool = sd * (1.63 + 1.66)* CP_des_cool * CI  ;
-      BM_HXpurif(k) = BM_deoxocool +BM_des_cool
+      BM_HXpurif(k) = BM_deoxocool +BM_des_cool;
 
 
       od_pump = 1.15; %# 15 % overdeisgn factor for pumps
@@ -1040,7 +1041,7 @@ CP_ads_min = 2 * 10 ^ (3.4974+ 0.4485 * log10(0.3)+ 0.1074 * (log10(0.3))^2);
       W_sys75 = W_sys75/eta_pow;   
       SEC_stack75(k) = SEC_stack_at_eta75;
       SEC_sys75(k) = 1000*((W_sys75))*J_kWh./(vap_h2_pdt_eta75*MH2); % 1000x for conv, from kW to W, SEC_sys at rated power without considering stack replacements, mainly used for comparing different capex designs
-      Q_cond(k,:) = [Q_cond_deoxo_at_eta75 Q_cond_h2cool_at_eta75 Q_cond_ads_at_eta75 Q_lyecooler_at_eta75]  
+      Q_cond(k,:) = [Q_cond_deoxo_at_eta75 Q_cond_h2cool_at_eta75 Q_cond_ads_at_eta75 Q_lyecooler_at_eta75]  ;
 
       Pow_lyeheater =  heater_frac_ratedpower*W_sys75*1000; % # rated lye heater power is heater_frac_ratedpower% of the W_sys75 in Watt
       P_rated_el   = eta_heater * Pow_lyeheater; % # this is the power actually transferred to the heat of the lye
@@ -1079,7 +1080,7 @@ CP_ads_min = 2 * 10 ^ (3.4974+ 0.4485 * log10(0.3)+ 0.1074 * (log10(0.3))^2);
     absCapexVals = [absCapexVals; TIC];
     Wsys70Vals = [Wsys70Vals; W_sys75];
     CapexperkW = absCapexVals./Wsys70Vals;
-    %IC_comp = [capex_cont, capex_aux, BM_capex];
+    IC_comp = [capex_cont, capex_aux, BM_capex];
     cd_eta75Vals = [cd_eta75Vals;cd_eta75];
    allOutputHeatmap = [allOutputHeatmap; compVectorHeatmap];
    allInputscapex = [allInputscapex; params];
@@ -1199,8 +1200,8 @@ allOutputcapexHeatmapScaled = 2 * (allOutputHeatmap - minOutcapexHeat) ./ (maxOu
 
 
 
-%save('preparedData_capex_rated75_heatmap.mat', 'allInputscapexScaled', 'allOutputcapexHeatmapScaled', ...
-%     'minIncapex', 'maxIncapex', 'minOutcapexHeat', 'maxOutcapexHeat');
+% save('preparedData_capex_rated75_heatmap.mat', 'allInputscapexScaled', 'allOutputcapexHeatmapScaled', ...
+%      'minIncapex', 'maxIncapex', 'minOutcapexHeat', 'maxOutcapexHeat');
 save('preparedData_pie.mat', 'allCapexComponents');% 'allOutputscapexScaled', ...
   %   'minIncapex', 'maxIncapex', 'minOutcapex', 'maxOutcapex');
 

@@ -29,4 +29,3 @@ inputparam_vs_load_m{value}_PV{value}_gr{value}: Output excel result file with o
 
 LCOH_vs_load_m{value}_PV{value}_gr{value}: Output excel result file with the LCOH component data for fixed parameters across the part-load sweep.
 
-Files in 'consolidated' folder contain averaged data from the 5 independent runs and range of LCOH values across them.

@@ -6,7 +6,7 @@ import scipy.io
 import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score
 import os
-os.chdir(r"D:\Comsol_Tut\EquationBasedModelling\HTO_paper_models\latest_model_tcd\Neom_report_models\Publication Models\modified_model\Optimization_study\saved data")
+os.chdir(r"C:\comsol\5_stack_model\saved_data")
 plt.ion()  # Turn on interactive plotting mode
 
 # Load multi-output training data
@@ -44,7 +44,7 @@ yTest = y[testIdx, :]
 
 inputSize = X.shape[1]
 outputSize = y.shape[1]        # should now be 9
-hiddenSize = 256
+hiddenSize = 128
 
 class LogLossRMSECallback(tf.keras.callbacks.Callback):
     def __init__(self, plotEpochFreq=20):

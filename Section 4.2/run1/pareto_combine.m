@@ -5,7 +5,7 @@ format long g
  %files = dir('ga_sens_cdeta0.*_m0.*_nj0.5_PV_rated*_gr*_lcoh_jo*.mat');
 
  %files = dir('ga_sens_cdeta0.*_m0.0010_nj0.5_PV_rated75.0_gr3.5_lcoh_job9778642_SECsys.mat');
-  files = dir('ga_sens_*.mat');                 % all GA sensitivity files
+  files = dir('ga_sens_cdeta0.*_m0.*_nj1.0alpha0.001_PV_rated*_gr*_lcoh_rel_RES0.5_job*_SECsys_gc3x.mat');                 % all GA sensitivity files
 
 
   
@@ -53,7 +53,7 @@ for i = 1:nF
     name = files_use(i).name;
     t = regexp(name,'_cdeta([0-9\.]+)_','tokens','once');  params(i).cdeta = str2double(t{1});
     t = regexp(name,'_m([0-9\.]+)_','tokens','once');      params(i).m     = str2double(t{1});
-    t = regexp(name,'_nj([0-9\.]+)_','tokens','once');     params(i).nj    = str2double(t{1});
+    t = regexp(name,'_nj([0-9\.]+)','tokens','once');     params(i).nj    = str2double(t{1});
     t = regexp(name,'_PV_rated([0-9\.]+)_','tokens','once'); params(i).PV  = str2double(t{1});
     t = regexp(name,'_gr([0-9\.]+)_','tokens','once');     params(i).gr    = str2double(t{1});
 end
@@ -103,6 +103,7 @@ for g = 1:nGroups
     all_hours_idle= [];
     all_therm_tau= [];
     all_p_min_standby =[];
+    all_p_min =[];
     all_frac_standby_ener = [];
     all_SEC_avg_stack =[];    
     all_T_hist=[];
@@ -144,6 +145,7 @@ for g = 1:nGroups
         all_hours_idle = [all_hours_idle ; S.pareto_hours_idle(:) ];
         all_therm_tau = [all_therm_tau ; S.pareto_therm_tau(:) ];
         all_p_min_standby =[all_p_min_standby ; S.pareto_p_min_standby(:)];
+        all_p_min =[all_p_min; S.pareto_p_min(:)];
         all_frac_standby_ener = [all_frac_standby_ener ; S.pareto_frac_standby_ener(:)];
         all_T_hist = [all_T_hist ; S.pareto_T_hist]; 
         %if isfield(S, 'pareto_SEC_avg_stack')
@@ -191,6 +193,7 @@ for g = 1:nGroups
     pareto_hours_idle           = all_hours_idle(idxP);
     pareto_therm_tau            = all_therm_tau(idxP);
     pareto_p_min_standby        = all_p_min_standby(idxP);
+    pareto_p_min = all_p_min(idxP);
     pareto_frac_standby_ener    = all_frac_standby_ener(idxP);
     % if isfield(S, 'pareto_SEC_avg_stack')
     pareto_SEC_avg_stack    = all_SEC_avg_stack(idxP);  
@@ -198,7 +201,7 @@ for g = 1:nGroups
     % end
 
    % k
-    outName = sprintf('combined_cdeta%.3f_m%.4f_nj%.2f_PV%.1f_gr%.1f.mat', ...
+    outName = sprintf('combined_cdeta%.6f_m%.4f_nj%.2f_PV%.1f_gr%.1f.mat', ...
                       Tu.cdeta(g), Tu.m(g), Tu.nj(g), Tu.PV(g), Tu.gr(g));
 vars = { ...
     'pareto_F','pareto_G','pareto_X', ...
@@ -212,7 +215,8 @@ vars = { ...
     'pareto_cd_eta75', ...
     'pareto_frac_heating_limited','pareto_hours_prod', ...
     'pareto_hours_standby','pareto_hours_idle','pareto_therm_tau', ...
-    'pareto_p_min_standby','pareto_frac_standby_ener', 'pareto_T_hist'...
+    'pareto_p_min_standby','pareto_p_min','pareto_frac_standby_ener', 'pareto_T_hist'...
+    
 };
 
 % Only add this variable if it exists in the workspace

@@ -81,8 +81,8 @@ for k = 1:length(matFiles)
         error('currentDensity not found in file %s', fileName);
     end
     currDensOrig = data.currentDensity(:);
-    if max(currDensOrig) < 10000
-        fprintf('Skipping %s: max(currentDensity) < 10000 A/m^2\n', fileName);
+    if max(currDensOrig) < 5000
+        fprintf('Skipping %s: max(currentDensity) < 5000 A/m^2\n', fileName);
         skippedFiles{end+1} = fileName;
         continue
     end
@@ -378,8 +378,8 @@ for k = 1:length(matFiles)
     thisOutputs(:,7) = ((thisOutputs(:,7).^(lambda)-1)/lambda) ;
     thisOutputs(:,8) = ((thisOutputs(:,8).^(lambda)-1)/lambda) ;
     thisOutputs(:,9) = ((thisOutputs(:,9).^(lambda)-1)/lambda) ;
-    thisOutputs(:,16) = ((thisOutputs(:,16).^(lambda)-1)/lambda) ;
-    thisOutputs(:,17) = ((thisOutputs(:,17).^(lambda)-1)/lambda) ;
+    thisOutputs(:,15) = ((thisOutputs(:,16).^(lambda)-1)/lambda) ;
+    thisOutputs(:,16) = ((thisOutputs(:,17).^(lambda)-1)/lambda) ;
 
     allInputs = [allInputs; inputMatrix];
     allOutputs = [allOutputs; thisOutputs];

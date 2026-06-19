@@ -8,7 +8,7 @@ import seaborn as sns
 import statsmodels.api as sm
 import os
 import math
-#os.chdir(r"D:\Comsol_Tut\EquationBasedModelling\HTO_paper_models\latest_model_tcd\Neom_report_models\Publication Models\modified_model\Optimization_study\saved data\For Joule_pubPlots")
+os.chdir(r"C:\comsol\5_stack_model\saved_data")
 # Load scaling parameters
 lam = -0.5
 frac = 1    
@@ -77,17 +77,19 @@ maxIn = np.delete(maxIn, 4)
 minOut = scaling['minOut'].flatten()
 maxOut = scaling['maxOut'].flatten()
 
+wgde_min_sobol = 0.4
+wgde_max_sobol = 1
 cd_min_sobol = 5000.0
 cd_max_sobol = 15000.0
 
-p_max_sobol = 10
+p_max_sobol = 15
 p_min_sobol = 1
 
 vin_min_sobol = 0.0075
-vin_max_sobol = 0.05
+vin_max_sobol = 0.02
 
-Wsep_min_sobol = 0.1
-Wsep_max_sobol = 0.485
+Wsep_min_sobol = 0.075
+Wsep_max_sobol = 0.2
 cd_min = minIn[-1]
 cd_max = maxIn[-1]
 
@@ -95,9 +97,9 @@ problem = {
     'num_vars': len(minIn),
     'names': ['Wgde', 'P', 'vin', 'dpore', 'Wsep', 'currentDensity'],
     'bounds': [
-        (minIn[0], maxIn[0]),  # Wgde
+        (wgde_min_sobol, wgde_max_sobol),  # Wgde
         (p_min_sobol, p_max_sobol),  # P
-        (minIn[2], maxIn[2]),  # vin
+        (vin_min_sobol, vin_max_sobol),  # vin
         (minIn[3], maxIn[3]),  # dpore
         (minIn[4], maxIn[4]),  # Wsep
         (cd_min_sobol, cd_max_sobol)  # j restricted
